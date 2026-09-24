@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jurnal Barber</title>
+
+<!-- iOS / PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Jurnal">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#edeff2" id="themeColor">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+
+<!-- Aplică tema salvată înainte de desenare (evită clipirea alb/negru) -->
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem('jb-theme') || 'system';
+    document.documentElement.setAttribute('data-theme', t);
+  } catch (e) {
+    document.documentElement.setAttribute('data-theme', 'system');
+  }
+})();
+</script>
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<main id="app">
+
+  <!-- ============ ACASĂ ============ -->
+  <section class="screen" id="screen-home" data-screen="home">
+    <header class="page-head">
+      <h1>Azi</h1>
+      <p class="page-sub" id="homeDate"></p>
+    </header>
+
+    <div class="hero" id="homeSummary"></div>
+
+    <h2 class="section-title">Adaugă un tuns</h2>
+    <div class="quick-grid" id="quickGrid"></div>
+
+    <h2 class="section-title">Tunsurile de azi</h2>
+    <div id="homeList"></div>
+  </section>
+
+  <!-- ============ CALENDAR ============ -->
+  <section class="screen" id="screen-calendar" data-screen="calendar" hidden>
+    <header class="page-head">
+      <h1>Calendar</h1>
+    </header>
+
+    <div class="cal-nav">
+      <button class="icon-btn" data-action="cal-prev" aria-label="Luna precedentă">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <div class="cal-title" id="calTitle"></div>
+      <button class="icon-btn" data-action="cal-next" aria-label="Luna următoare">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <div class="cal-weekdays">
+      <span>L</span><span>Ma</span><span>Mi</span><span>J</span><span>V</span><span>S</span><span>D</span>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-foot" id="calFoot"></div>
+  </section>
+
+  <!-- ============ ISTORIC ============ -->
+  <section class="screen" id="screen-history" data-screen="history" hidden>
+    <header class="page-head">
+      <h1>Istoric</h1>
+    </header>
+
+    <div id="statsBox"></div>
+
+    <h2 class="section-title">Zile lucrate</h2>
+    <div id="historyList"></div>
+  </section>
+
+  <!-- ============ PROFIL ============ -->
+  <section class="screen" id="screen-profile" data-screen="profile" hidden>
+    <header class="page-head">
+      <h1>Profil</h1>
+    </header>
+
+    <h2 class="section-title">Servicii</h2>
+    <div class="group" id="serviceList"></div>
+    <button class="btn btn-soft btn-block" data-action="add-service">+ Adaugă serviciu</button>
+
+    <h2 class="section-title">Împărțirea cu șeful</h2>
+    <div class="group form-group">
+      <label class="field-row">
+        <span class="field-label">Prag pe suma zilei (lei)</span>
+        <input id="ruleThreshold" data-rule="threshold" type="text" inputmode="decimal" autocomplete="off">
+      </label>
+      <label class="field-row">
+        <span class="field-label">Cât păstrez sub prag (lei)</span>
+        <input id="ruleKeepBelow" data-rule="keepBelow" type="text" inputmode="decimal" autocomplete="off">
+      </label>
+      <label class="field-row">
+        <span class="field-label">Procentul meu peste prag (%)</span>
+        <input id="rulePctAbove" data-rule="pctAbove" type="text" inputmode="decimal" autocomplete="off">
+      </label>
+      <label class="field-row">
+        <span class="field-label">Tips-ul care rămâne la mine (%)</span>
+        <input id="ruleTipsPct" data-rule="tipsPct" type="text" inputmode="decimal" autocomplete="off">
+      </label>
+    </div>
+    <p class="help" id="ruleHelp"></p>
+
+    <h2 class="section-title">Temă</h2>
+    <div class="segmented" id="themeSeg" role="radiogroup" aria-label="Temă">
+      <button data-action="theme" data-val="light" role="radio">Luminos</button>
+      <button data-action="theme" data-val="dark" role="radio">Întunecat</button>
+      <button data-action="theme" data-val="system" role="radio">Sistem</button>
+    </div>
+
+    <h2 class="section-title">Backup</h2>
+    <div class="btn-row">
+      <button class="btn btn-soft" data-action="export">Exportă datele</button>
+      <button class="btn btn-soft" data-action="import">Importă date</button>
+    </div>
+    <input type="file" id="importFile" class="sr-only" accept=".json,application/json" tabindex="-1" aria-hidden="true">
+    <p class="help" id="backupHelp"></p>
+
+    <p class="footnote" id="storageInfo"></p>
+  </section>
+
+</main>
+
+<!-- ============ NAVIGARE JOS ============ -->
+<nav class="tabbar" id="tabbar" aria-label="Navigare principală">
+  <button data-tab="home" class="tab is-active" aria-current="page">
+    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-6h4v6h3a1 1 0 0 0 1-1v-9"/></svg>
+    <span>Acasă</span>
+  </button>
+  <button data-tab="calendar" class="tab">
+    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
+    <span>Calendar</span>
+  </button>
+  <button data-tab="history" class="tab">
+    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+    <span>Istoric</span>
+  </button>
+  <button data-tab="profile" class="tab">
+    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.7"/><path d="M4.5 20c.6-3.6 3.6-5.6 7.5-5.6s6.9 2 7.5 5.6"/></svg>
+    <span>Profil</span>
+  </button>
+</nav>
+
+<!-- ============ FEREASTRĂ: TUNS (adăugare / editare) ============ -->
+<div class="overlay" id="cutSheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cutSheetTitle">
+    <div class="grabber"></div>
+    <h3 class="sheet-title" id="cutSheetTitle">Tuns nou</h3>
+
+    <div class="chips" id="cutServiceChips"></div>
+
+    <label class="field">
+      <span class="field-label">Serviciu</span>
+      <input id="cutName" type="text" placeholder="Ex: Fade" autocomplete="off" autocapitalize="sentences">
+    </label>
+
+    <div class="two-col">
+      <label class="field">
+        <span class="field-label">Preț (lei)</span>
+        <input id="cutPrice" type="text" inputmode="decimal" placeholder="0" autocomplete="off">
+      </label>
+      <label class="field">
+        <span class="field-label">Tips (lei)</span>
+        <input id="cutTips" type="text" inputmode="decimal" placeholder="0" autocomplete="off">
+      </label>
+    </div>
+
+    <div class="chips tips-chips" id="cutTipChips">
+      <button class="chip" data-action="tip" data-val="0">Fără tips</button>
+      <button class="chip" data-action="tip" data-val="10">10</button>
+      <button class="chip" data-action="tip" data-val="20">20</button>
+      <button class="chip" data-action="tip" data-val="30">30</button>
+      <button class="chip" data-action="tip" data-val="50">50</button>
+    </div>
+
+    <div class="two-col">
+      <label class="field">
+        <span class="field-label">Data</span>
+        <input id="cutDate" type="date">
+      </label>
+      <label class="field">
+        <span class="field-label">Ora</span>
+        <input id="cutTime" type="time">
+      </label>
+    </div>
+
+    <div class="preview" id="cutPreview"></div>
+    <p class="form-error" id="cutError" hidden></p>
+
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" data-action="close-cut">Anulează</button>
+      <button class="btn btn-primary" data-action="save-cut">Salvează</button>
+    </div>
+    <button class="btn btn-danger-text btn-block" id="cutDeleteBtn" data-action="delete-cut" hidden>Șterge tunsul</button>
+  </div>
+</div>
+
+<!-- ============ FEREASTRĂ: SERVICIU (adăugare / editare) ============ -->
+<div class="overlay" id="serviceSheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="svcSheetTitle">
+    <div class="grabber"></div>
+    <h3 class="sheet-title" id="svcSheetTitle">Serviciu nou</h3>
+
+    <label class="field">
+      <span class="field-label">Nume serviciu</span>
+      <input id="svcName" type="text" placeholder="Ex: Fade" autocomplete="off" autocapitalize="sentences">
+    </label>
+    <label class="field">
+      <span class="field-label">Preț implicit (lei)</span>
+      <input id="svcPrice" type="text" inputmode="decimal" placeholder="0" autocomplete="off">
+    </label>
+    <p class="form-error" id="svcError" hidden></p>
+
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" data-action="close-service">Anulează</button>
+      <button class="btn btn-primary" data-action="save-service">Salvează</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FEREASTRĂ: ZI (calendar / istoric) ============ -->
+<div class="overlay" id="daySheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="daySheetTitle">
+    <div class="grabber"></div>
+    <h3 class="sheet-title" id="daySheetTitle"></h3>
+    <div id="dayBody"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" data-action="close-day">Închide</button>
+      <button class="btn btn-primary" data-action="add-cut-day">+ Adaugă tuns</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DIALOG DE CONFIRMARE ============ -->
+<div class="overlay overlay-center" id="confirmDialog" hidden>
+  <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText">
+    <h3 id="confirmTitle"></h3>
+    <p id="confirmText"></p>
+    <div class="dialog-actions">
+      <button class="btn btn-ghost" data-action="confirm-cancel" id="confirmCancel">Anulează</button>
+      <button class="btn btn-primary" data-action="confirm-ok" id="confirmOk">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mesaj scurt (toast) -->
+<div class="toast" id="toast" hidden></div>
+
+<noscript><p style="padding:24px;font-family:sans-serif">Aplicația are nevoie de JavaScript activat.</p></noscript>
+<script src="app.js"></script>
+</body>
+</html>
